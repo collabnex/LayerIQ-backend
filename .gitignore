@@ -14,10 +14,7 @@ target/
 .sts4-cache
 
 ### Sensitive Spring Config ###
-application.yml
-application.properties
-application-*.yml
-application-*.properties
+
 
 ### Spring Boot target ###
 /target/
