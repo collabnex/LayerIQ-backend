@@ -1,18 +1,24 @@
 package com.layerIQ.vendor.service;
 
-import com.layerIQ.vendor.model.Vendor;
+import com.layerIQ.vendor.dto.VendorRequest;
+import com.layerIQ.vendor.dto.VendorResponse;
 
 import java.util.List;
 
 public interface VendorService {
 
-    Vendor create(Vendor vendor);
+    // CREATE
+    VendorResponse createVendor(VendorRequest request);
 
-    List<Vendor> getAll();
+    // READ ALL
+    List<VendorResponse> getAllVendors();
 
-    Vendor getById(Long id);
+    // READ ONE
+    VendorResponse getVendor(Long id);
 
-    Vendor update(Long id, Vendor vendor);
+    // UPDATE
+    VendorResponse updateVendor(Long id, VendorRequest request);
 
-    void delete(Long id);
+    // DELETE
+    void deleteVendor(Long id);
 }

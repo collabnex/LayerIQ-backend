@@ -1,6 +1,7 @@
 package com.layerIQ.vendor.api;
 
-import com.layerIQ.vendor.model.Vendor;
+import com.layerIQ.vendor.dto.VendorRequest;
+import com.layerIQ.vendor.dto.VendorResponse;
 import com.layerIQ.vendor.service.VendorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,39 +17,42 @@ public class VendorController {
 
     private final VendorService vendorService;
 
-    // CREATE
+    // ✅ CREATE
     @PostMapping
-    public ResponseEntity<Vendor> create(@RequestBody Vendor vendor) {
-        Vendor created = vendorService.create(vendor);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<VendorResponse> create(
+            @RequestBody VendorRequest request) {
+
+        VendorResponse response = vendorService.createVendor(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    // READ ALL
+    // ✅ READ ALL
     @GetMapping
-    public ResponseEntity<List<Vendor>> getAll() {
-        return ResponseEntity.ok(vendorService.getAll());
+    public ResponseEntity<List<VendorResponse>> getAll() {
+        return ResponseEntity.ok(vendorService.getAllVendors());
     }
 
-    // READ ONE
+    // ✅ READ ONE
     @GetMapping("/{id}")
-    public ResponseEntity<Vendor> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(vendorService.getById(id));
+    public ResponseEntity<VendorResponse> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(vendorService.getVendor(id));
     }
 
-    // UPDATE
+    // ✅ UPDATE
     @PutMapping("/{id}")
-    public ResponseEntity<Vendor> update(
+    public ResponseEntity<VendorResponse> update(
             @PathVariable Long id,
-            @RequestBody Vendor vendor) {
+            @RequestBody VendorRequest request) {
 
-        Vendor updated = vendorService.update(id, vendor);
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(
+                vendorService.updateVendor(id, request)
+        );
     }
 
-    // DELETE
+    // ✅ DELETE
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        vendorService.delete(id);
+        vendorService.deleteVendor(id);
         return ResponseEntity.noContent().build();
     }
 }

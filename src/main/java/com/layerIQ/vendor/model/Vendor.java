@@ -4,8 +4,9 @@ import com.layerIQ.vendor.enums.VendorStatus;
 import com.layerIQ.vendor.enums.VendorType;
 import com.layerIQ.vendor.enums.VerificationLevel;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import java.util.HashSet;
+import java.util.Set;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -13,6 +14,9 @@ import java.math.BigDecimal;
 @Table(name = "vendor_profiles")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Vendor {
 
     @Id
@@ -51,4 +55,24 @@ public class Vendor {
 
     @Enumerated(EnumType.STRING)
     private VendorStatus status = VendorStatus.DRAFT;
+
+    /* One Vendor → Many Roles */
+    @OneToMany(
+            mappedBy = "vendor",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private Set<VendorRole> roles = new HashSet<>();
+
+    public void addRole(VendorRoleType roleType) {
+        VendorRole role = VendorRole.builder()
+                .id(new VendorRoleId(null, roleType))
+                .vendor(this)
+                .build();
+        roles.add(role);
+    }
+
+    public void removeRole(VendorRoleType roleType) {
+        roles.removeIf(r -> r.getId().getRole() == roleType);
+    }
 }

@@ -1,15 +1,21 @@
 package com.layerIQ.vendor.service.impl;
 
-import com.layerIQ.exceptions.VendorNotFoundException;
+import com.layerIQ.vendor.dto.VendorRequest;
+import com.layerIQ.vendor.dto.VendorResponse;
 import com.layerIQ.vendor.model.Vendor;
+import com.layerIQ.vendor.model.VendorRole;
+import com.layerIQ.vendor.model.VendorRoleId;
+import com.layerIQ.vendor.model.VendorRoleType;
 import com.layerIQ.vendor.repository.VendorRepository;
 import com.layerIQ.vendor.service.VendorService;
-import jakarta.transaction.Transactional;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,45 +24,98 @@ public class VendorServiceImpl implements VendorService {
 
     private final VendorRepository vendorRepository;
 
+    // ================= CREATE =================
     @Override
-    public Vendor create(Vendor vendor) {
-        if (vendor.getDisplayName() == null || vendor.getDisplayName().isBlank()) {
-            throw new IllegalArgumentException("Display name is required");
+    public VendorResponse createVendor(VendorRequest request) {
+
+        Vendor vendor = Vendor.builder().build();
+
+        // Add roles
+        for (VendorRoleType roleType : request.getRoles()) {
+            VendorRole role = VendorRole.builder()
+                    .id(new VendorRoleId(null, roleType))
+                    .vendor(vendor)
+                    .build();
+
+            vendor.getRoles().add(role);
         }
 
-        vendor.setUuid(UUID.randomUUID().toString());
-        return vendorRepository.save(vendor);
+        Vendor saved = vendorRepository.save(vendor);
+        return mapToResponse(saved);
     }
 
+    // ================= READ ALL =================
     @Override
-    public List<Vendor> getAll() {
-        return vendorRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<VendorResponse> getAllVendors() {
+        return vendorRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
+    // ================= READ ONE =================
     @Override
-    public Vendor getById(Long id) {
-        return vendorRepository.findById(id)
-                .orElseThrow(() -> new VendorNotFoundException(id));
-    }
-
-    @Override
-    public Vendor update(Long id, Vendor data) {
-        Vendor vendor = getById(id);
-
-        vendor.setDisplayName(data.getDisplayName());
-        vendor.setLegalName(data.getLegalName());
-        vendor.setDescription(data.getDescription());
-        vendor.setWebsite(data.getWebsite());
-        vendor.setStatus(data.getStatus());
-
-        return vendorRepository.save(vendor);
-    }
-
-    @Override
-    public void delete(Long id) {
+    @Transactional(readOnly = true)
+    public VendorResponse getVendor(Long id) {
         Vendor vendor = vendorRepository.findById(id)
-                .orElseThrow(() -> new VendorNotFoundException(id));
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Vendor not found with id: " + id)
+                );
+
+        return mapToResponse(vendor);
+    }
+
+    // ================= UPDATE =================
+    @Override
+    public VendorResponse updateVendor(Long id, VendorRequest request) {
+
+        Vendor vendor = vendorRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Vendor not found with id: " + id)
+                );
+
+        // Clear old roles
+        vendor.getRoles().clear();
+
+        // Add new roles
+        for (VendorRoleType roleType : request.getRoles()) {
+            VendorRole role = VendorRole.builder()
+                    .id(new VendorRoleId(id, roleType))
+                    .vendor(vendor)
+                    .build();
+
+            vendor.getRoles().add(role);
+        }
+
+        Vendor updated = vendorRepository.save(vendor);
+        return mapToResponse(updated);
+    }
+
+    // ================= DELETE =================
+    @Override
+    public void deleteVendor(Long id) {
+
+        Vendor vendor = vendorRepository.findById(id)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Vendor not found with id: " + id)
+                );
 
         vendorRepository.delete(vendor);
+        // roles auto-deleted due to cascade + orphanRemoval
+    }
+
+    // ================= MAPPER =================
+    private VendorResponse mapToResponse(Vendor vendor) {
+
+        Set<VendorRoleType> roles = vendor.getRoles()
+                .stream()
+                .map(r -> r.getId().getRole())
+                .collect(Collectors.toSet());
+
+        return VendorResponse.builder()
+                .id(vendor.getId())
+                .roles(roles)
+                .build();
     }
 }
